@@ -14,7 +14,7 @@ function $(args){
   }
   ns.dumpArgs = function(){
     let ret = {}
-    for (let i of ['key', 'mapwidth', 'map', 'debug']){
+    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y']){
       ret[i] = ns[i];
     }
     return btoa(JSON.stringify(ret))
@@ -57,7 +57,7 @@ function $(args){
       }
       ret += line + '\n';
     }
-    return ret;
+    return ret.trim();
   }
   ns.symbolAt = function(x, y){
     let surroundings = ['_','_','_','_'];
@@ -105,9 +105,72 @@ function $(args){
       ns.x -= 1;
     }
   }
-  
   ns.parseArgs();
   if (ns.debug){
+    let dbgroot = document.createElement('div');
+    let mapview = document.createElement('textarea');
+    mapview.disabled = true;
+    mapview.value = ns.render();
+    mapview.rows = ns.map.length/ns.mapwidth;
+    mapview.cols = ns.mapwidth;
+    mapview.title = 'current state';
+    dbgroot.appendChild(mapview);
+    let mapedit = document.createElement('textarea');
+    mapedit.value = ns.render();
+    mapedit.rows = ns.map.length/ns.mapwidth;
+    mapedit.cols = ns.mapwidth;
+    mapedit.title = 'Edit this to change the layout of the maze. Walls are marked by X, starting position is marked by !';
+    ns.parseMap = function(inputText){
+      let lines = inputText.split('\n');
+      for (let y=0; y<lines.length; y++){
+        let x = lines[y].indexOf('!');
+        if (x >= 0){
+          ns.x = x;
+          ns.y = y;
+          break;
+        }
+      }
+      ns.mapwidth = lines[0].length;
+      ns.map = lines.join('').replace('!', ' ');
+    }
+    dbgroot.appendChild(mapedit);
+    let symboledit = document.createElement('textarea');
+    symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are. X for wall, _ for no wall.\nThe format of each line is "UpRightDownLeft:Symbol", so "X_X_:J" means if there are walls above and below but no walls to the right or to the left, you see a Q.'
+    ns.printkeys = function(){
+      let out = "";
+      for (let k in ns.key){
+        out += k + ':' + ns.key[k] + '\n';
+      }
+      return out.trim();
+    }
+    ns.parsekeys = function(inputtext){
+      let lines = inputtext.split('\n');
+      for (let line of lines){
+        let tokens = line.split(':');
+        ns.key[tokens[0]] = tokens[1].trim();
+      }
+    }
+    symboledit.value = ns.printkeys();
+    symboledit.rows = symboledit.value.split('\n').length;
+    dbgroot.appendChild(symboledit);
+    let btnsave = document.createElement('button');
+    btnsave.innerHTML = 'Generate URL';
+    btnsave.addEventListener('click', function(){
+      ns.parseMap(mapedit.value);
+      ns.parsekeys(symboledit.value);
+      let gen = new URL(location);
+      ns.debug = false;
+      gen.search = '?data=' + ns.dumpArgs();
+      ns.debug = true;
+      output.value = gen.href;
+    });
+    dbgroot.appendChild(btnsave);
+    let output = document.createElement('textarea');
+    dbgroot.appendChild(output);
+    let body = document.body;
+    body.appendChild(dbgroot);
+    body.addEventListener('click', function(){mapview.value = ns.render()});
+
     return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft, ns.currentSymbol, ns];
   }else{
     return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft, ns.currentSymbol];
