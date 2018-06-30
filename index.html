@@ -1,1 +1,22 @@
+<html>
+<head>
 <script src="puzzle1.js"></script>
+</head>
+<body>
+<button id="red">Red</button>
+<button id="green">Green</button>
+<button id="blue">Blue</button>
+<button id="yellow">Yellow</button>
+<p></p>
+<script>
+let a = $();
+let btns = document.querySelectorAll('button');
+for (let i=0; i<4; i++){
+  btns[i].addEventListener('click', a[i]);
+  btns[i].addEventListener('click', function(){
+    document.querySelector('p').innerHTML = 'Through the lens you see: ' + a[4]();
+  });
+}
+</script>
+</body>
+</html>

@@ -76,34 +76,40 @@ function $(args){
     let k = surroundings.join('');
     return ns.key[k];
   }
+  ns.currentSymbol = function(){
+    return ns.symbolAt(ns.x, ns.y);
+  }
+  ns.tileAt = function(x, y){
+    return ns.map.charAt(ns.posToIndex(x,y))
+  }
   ns.posToIndex = function(x, y){
     return x + y*ns.mapwidth;
   }
   ns.moveUp = function(){
-    if (ns.symbolAt(ns.x, ns.y-1) === ' '){
+    if (ns.tileAt(ns.x, ns.y-1) === ' '){
       ns.y -= 1;
     }
   }
   ns.moveRight = function(){
-    if (ns.symbolAt(ns.x+1, ns.y) === ' '){
+    if (ns.tileAt(ns.x+1, ns.y) === ' '){
       ns.x += 1;
     }
   }
   ns.moveDown = function(){
-    if (ns.symbolAt(ns.x, ns.y+1) === ' '){
+    if (ns.tileAt(ns.x, ns.y+1) === ' '){
       ns.y += 1;
     }
   }
   ns.moveLeft = function(){
-    if (ns.symbolAt(ns.x-1, ns.y) === ' '){
+    if (ns.tileAt(ns.x-1, ns.y) === ' '){
       ns.x -= 1;
     }
   }
   
   ns.parseArgs();
   if (ns.debug){
-    return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft, ns];
+    return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft, ns.currentSymbol, ns];
   }else{
-    return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft];
+    return [ns.moveUp, ns.moveRight, ns.moveDown, ns.moveLeft, ns.currentSymbol];
   }
 };
