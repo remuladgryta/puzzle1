@@ -1,4 +1,5 @@
 <html>
+<meta charset="UTF-8">
 <head>
 <script src="puzzle1.js"></script>
 </head>
@@ -11,6 +12,7 @@
 <script>
 let a = $();
 let btns = document.querySelectorAll('button');
+document.querySelector('p').innerHTML = 'Through the lens you see: ' + a[4]();
 for (let i=0; i<4; i++){
   btns[i].addEventListener('click', a[i]);
   btns[i].addEventListener('click', function(){
