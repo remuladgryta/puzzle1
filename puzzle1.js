@@ -4,77 +4,82 @@ function $(args){
   ns.debug = false;
   ns.parseArgs = function(){
     if (args){
-      ns = Object.assign(ns, JSON.parse(atob(args)))
+      ns = Object.assign(ns, JSON.parse(decodeURIComponent(atob(args))))
     }else {
       args = (new URL(location)).searchParams.get('data');
       if(args){
-        ns = Object.assign(ns, JSON.parse(atob(args)))
+        ns = Object.assign(ns, JSON.parse(decodeURIComponent(atob(args))))
       }
     }
   }
   ns.dumpArgs = function(){
     let ret = {}
-    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y']){
+    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y', 'startx', 'starty']){
       ret[i] = ns[i];
     }
-    return btoa(JSON.stringify(ret))
+    return btoa(encodeURIComponent(JSON.stringify(ret)));
   }
   //up, right, down, left
   ns.key = {
-    '____':'A',
-    '___X':'B',
-    '__X_':'C',
-    '_X__':'D',
-    'X___':'E',
-    '__XX':'F',
-    '_X_X':'G',
-    'X__X':'H',
-    '_XX_':'I',
-    'X_X_':'J',
-    'XX__':'K',
-    'XXX_':'L',
-    'XX_X':'M',
-    'X_XX':'N',
-    '_XXX':'O',
-    'XXXX':'P'
+    '┼': 'A',
+    '─': '2',
+    '│': '3',
+    '┬': '4',
+    '┤': '5',
+    '┴': '6',
+    '├': '7',
+    '┐': '8',
+    '┘': '9',
+    '└': '10',
+    '┌': 'J',
+    'Q': 'Q',
+    'K': 'K',
   };
-
+  ns.dirmap = {
+    '─': ['right', 'left'],
+    '│': ['up', 'down'],
+    '┌': ['right', 'down'],
+    '┐': ['down', 'left'],
+    '└': ['up', 'right'],
+    '┘': ['up', 'left'],
+    '├': ['up', 'right', 'down'],
+    '┤': ['up', 'down', 'left'],
+    '┬': ['right', 'down', 'left'],
+    '┴': ['up', 'right', 'left'],
+    '┼': ['up', 'right', 'down', 'left'],
+    '╴': ['left'],
+    '╵': ['up'],
+    '╶': ['right'],
+    '╷': ['down'],
+    'X': ['up', 'right', 'down', 'left'],
+    'Q': ['up', 'right', 'down', 'left'],
+    'K': ['up', 'right', 'down', 'left'],
+    '█': []
+  }
   ns.mapwidth = 11;
-  ns.map = 'XXXXXXXXXXX'+
-           'X         X'+
-           'X  X      X'+
-           'X X X     X'+
-           'X         X'+
-           'XXXXXXXXXXX';
+  ns.map = '███████████'+
+           '█┌┬─┬┬┬┬┬┐█'+
+           '█├┘█└┼┼┼┼┤█'+
+           '█│█│█├┼┼┼┤█'+
+           '█└─┴─┴┴┴┴┘█'+
+           '███████████';
   ns.x = 1;
   ns.y = 1;
+  ns.startx = 1;
+  ns.starty = 1;
   ns.render = function(){
     let ret = ""
     for (let i=0; i < ns.map.length/ns.mapwidth; i++){
       let line = ns.map.slice(ns.mapwidth*i, ns.mapwidth*(i+1));
       if (ns.y === i){
-        line = line.substr(0,ns.x) + '!' + line.substr(ns.x+1);
+        line = line.substr(0,ns.x) + 'O' + line.substr(ns.x+1);
       }
       ret += line + '\n';
     }
     return ret.trim();
   }
   ns.symbolAt = function(x, y){
-    let surroundings = ['_','_','_','_'];
-    if (ns.map.charAt(ns.posToIndex(x, y-1)) === 'X'){
-      surroundings[0] = 'X';
-    }
-    if (ns.map.charAt(ns.posToIndex(x+1, y)) === 'X'){
-      surroundings[1] = 'X';
-    }
-    if (ns.map.charAt(ns.posToIndex(x, y+1)) === 'X'){
-      surroundings[2] = 'X';
-    }
-    if (ns.map.charAt(ns.posToIndex(x-1, y)) === 'X'){
-      surroundings[3] = 'X';
-    }
-    let k = surroundings.join('');
-    return ns.key[k];
+    return ns.key[ns.tileAt(x, y)];
   }
   ns.currentSymbol = function(){
     return ns.symbolAt(ns.x, ns.y);
@@ -85,25 +90,42 @@ function $(args){
   ns.posToIndex = function(x, y){
     return x + y*ns.mapwidth;
   }
+  ns.handleSpecialTile = function(){
+    if (ns.tileAt(ns.x, ns.y) === 'X'){//Dead end should return you to the start
+      ns.x = ns.startx;
+      ns.y = ns.starty;
+    }
+  }
   ns.moveUp = function(){
-    if (ns.tileAt(ns.x, ns.y-1) === ' '){
+    if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('up') &&
+        ns.dirmap[ns.tileAt(ns.x, ns.y-1)].includes('down')){
       ns.y -= 1;
     }
+    ns.handleSpecialTile();
   }
   ns.moveRight = function(){
-    if (ns.tileAt(ns.x+1, ns.y) === ' '){
+    if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('right') &&
+        ns.dirmap[ns.tileAt(ns.x+1, ns.y)].includes('left'))
+    {
       ns.x += 1;
     }
+    ns.handleSpecialTile();
   }
   ns.moveDown = function(){
-    if (ns.tileAt(ns.x, ns.y+1) === ' '){
+    if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('down') &&
+        ns.dirmap[ns.tileAt(ns.x, ns.y+1)].includes('up'))
+    {
       ns.y += 1;
     }
+    ns.handleSpecialTile();
   }
   ns.moveLeft = function(){
-    if (ns.tileAt(ns.x-1, ns.y) === ' '){
+    if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('left') &&
+        ns.dirmap[ns.tileAt(ns.x-1, ns.y)].includes('right'))
+    {
       ns.x -= 1;
     }
+    ns.handleSpecialTile();
   }
   ns.parseArgs();
   if (ns.debug){
@@ -119,23 +141,25 @@ function $(args){
     mapedit.value = ns.render();
     mapedit.rows = ns.map.length/ns.mapwidth;
     mapedit.cols = ns.mapwidth;
-    mapedit.title = 'Edit this to change the layout of the maze. Walls are marked by X, starting position is marked by !';
+    mapedit.title = 'Edit this to change the layout of the maze. Starting position is marked by O';
     ns.parseMap = function(inputText){
       let lines = inputText.split('\n');
       for (let y=0; y<lines.length; y++){
-        let x = lines[y].indexOf('!');
+        let x = lines[y].indexOf('O');
         if (x >= 0){
           ns.x = x;
           ns.y = y;
+          ns.startx = x;
+          ns.starty = y;
           break;
         }
       }
       ns.mapwidth = lines[0].length;
-      ns.map = lines.join('').replace('!', ' ');
+      ns.map = lines.join('').replace('O', '┼');
     }
     dbgroot.appendChild(mapedit);
     let symboledit = document.createElement('textarea');
-    symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are. X for wall, _ for no wall.\nThe format of each line is "UpRightDownLeft:Symbol", so "X_X_:J" means if there are walls above and below but no walls to the right or to the left, you see a Q.'
+    symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are.'
     ns.printkeys = function(){
       let out = "";
       for (let k in ns.key){
