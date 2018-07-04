@@ -199,6 +199,10 @@ function $(args){
       portaledit.value = ns.printdict(ns.portals);
       portaledit.rows = portaledit.value.split('\n').length;
       dbgroot.appendChild(portaledit);
+      let checkboxes = document.createElement('div');
+      checkboxes.innerHTML = '<input id="dbg" type="checkbox"><label for="dbg">Debug</label>'+
+                             '<input id="edit" type="checkbox"><label for="edit">Edit</label>';
+      dbgroot.appendChild(checkboxes);
       let btnsave = document.createElement('button');
       btnsave.innerHTML = 'Generate URL';
       btnsave.addEventListener('click', function(){
@@ -206,9 +210,9 @@ function $(args){
         ns.key = ns.parsedict(symboledit.value);
         ns.portals = ns.parsedict(portaledit.value);
         let gen = new URL(location);
-        ns.debug = false;
+        ns.debug = document.querySelector('#dbg').checked;
+        ns.edit = document.querySelector('#edit').checked;
         gen.search = '?data=' + ns.dumpArgs();
-        ns.debug = true;
         output.value = gen.href;
       });
       dbgroot.appendChild(btnsave);
