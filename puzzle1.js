@@ -2,6 +2,7 @@
 function $(args){
   let ns = {};
   ns.debug = false;
+  ns.edit = false;
   ns.parseArgs = function(){
     if (args){
       ns = Object.assign(ns, JSON.parse(decodeURIComponent(atob(args))))
@@ -14,7 +15,7 @@ function $(args){
   }
   ns.dumpArgs = function(){
     let ret = {}
-    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y', 'startx', 'starty', 'portals']){
+    for (let i of ['key', 'mapwidth', 'map', 'debug', 'edit', 'x', 'y', 'startx', 'starty', 'portals']){
       ret[i] = ns[i];
     }
     return btoa(encodeURIComponent(JSON.stringify(ret)));
@@ -145,68 +146,70 @@ function $(args){
     mapview.cols = ns.mapwidth;
     mapview.title = 'current state';
     dbgroot.appendChild(mapview);
-    let mapedit = document.createElement('textarea');
-    mapedit.value = ns.render();
-    mapedit.rows = ns.map.length/ns.mapwidth;
-    mapedit.cols = ns.mapwidth;
-    mapedit.title = 'Edit this to change the layout of the maze. Starting position is marked by O';
-    ns.parseMap = function(inputText){
-      let lines = inputText.split('\n');
-      for (let y=0; y<lines.length; y++){
-        let x = lines[y].indexOf('O');
-        if (x >= 0){
-          ns.x = x;
-          ns.y = y;
-          ns.startx = x;
-          ns.starty = y;
-          break;
+    if (ns.edit){
+      let mapedit = document.createElement('textarea');
+      mapedit.value = ns.render();
+      mapedit.rows = ns.map.length/ns.mapwidth;
+      mapedit.cols = ns.mapwidth;
+      mapedit.title = 'Edit this to change the layout of the maze. Starting position is marked by O';
+      ns.parseMap = function(inputText){
+        let lines = inputText.split('\n');
+        for (let y=0; y<lines.length; y++){
+          let x = lines[y].indexOf('O');
+          if (x >= 0){
+            ns.x = x;
+            ns.y = y;
+            ns.startx = x;
+            ns.starty = y;
+            break;
+          }
         }
+        ns.mapwidth = lines[0].length;
+        ns.map = lines.join('').replace('O', '┼');
       }
-      ns.mapwidth = lines[0].length;
-      ns.map = lines.join('').replace('O', '┼');
-    }
-    dbgroot.appendChild(mapedit);
-    let symboledit = document.createElement('textarea');
-    symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are.'
-    ns.printdict = function(dict){
-      let out = "";
-      for (let k in dict){
-        out += k + ':' + dict[k] + '\n';
+      dbgroot.appendChild(mapedit);
+      let symboledit = document.createElement('textarea');
+      symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are.'
+      ns.printdict = function(dict){
+        let out = "";
+        for (let k in dict){
+          out += k + ':' + dict[k] + '\n';
+        }
+        return out.trim();
       }
-      return out.trim();
-    }
-    ns.parsedict = function(inputtext){
-      let ret = {}
-      let lines = inputtext.split('\n');
-      for (let line of lines){
-        let tokens = line.split(':');
-        ret[tokens[0]] = tokens[1].trim();
+      ns.parsedict = function(inputtext){
+        let ret = {}
+        let lines = inputtext.split('\n');
+        for (let line of lines){
+          let tokens = line.split(':');
+          ret[tokens[0]] = tokens[1].trim();
+        }
+        return ret;
       }
-      return ret;
+      symboledit.value = ns.printdict(ns.key);
+      symboledit.rows = symboledit.value.split('\n').length;
+      dbgroot.appendChild(symboledit);
+      let portaledit = document.createElement('textarea');
+      portaledit.title = 'Edit this to add tiles that teleport you to other tiles. Format is "x,y:x,y" ("1,2:10,11" teleports from x=1,y=2 to x=10,y=11).';
+      portaledit.value = ns.printdict(ns.portals);
+      portaledit.rows = portaledit.value.split('\n').length;
+      dbgroot.appendChild(portaledit);
+      let btnsave = document.createElement('button');
+      btnsave.innerHTML = 'Generate URL';
+      btnsave.addEventListener('click', function(){
+        ns.parseMap(mapedit.value);
+        ns.key = ns.parsedict(symboledit.value);
+        ns.portals = ns.parsedict(portaledit.value);
+        let gen = new URL(location);
+        //ns.debug = false;
+        gen.search = '?data=' + ns.dumpArgs();
+        ns.debug = true;
+        output.value = gen.href;
+      });
+      dbgroot.appendChild(btnsave);
+      let output = document.createElement('textarea');
+      dbgroot.appendChild(output);
     }
-    symboledit.value = ns.printdict(ns.key);
-    symboledit.rows = symboledit.value.split('\n').length;
-    dbgroot.appendChild(symboledit);
-    let portaledit = document.createElement('textarea');
-    portaledit.title = 'Edit this to add tiles that teleport you to other tiles. Format is "x,y:x,y" ("1,2:10,11" teleports from x=1,y=2 to x=10,y=11).';
-    portaledit.value = ns.printdict(ns.portals);
-    portaledit.rows = portaledit.value.split('\n').length;
-    dbgroot.appendChild(portaledit);
-    let btnsave = document.createElement('button');
-    btnsave.innerHTML = 'Generate URL';
-    btnsave.addEventListener('click', function(){
-      ns.parseMap(mapedit.value);
-      ns.key = ns.parsedict(symboledit.value);
-      ns.portals = ns.parsedict(portaledit.value);
-      let gen = new URL(location);
-      ns.debug = false;
-      gen.search = '?data=' + ns.dumpArgs();
-      ns.debug = true;
-      output.value = gen.href;
-    });
-    dbgroot.appendChild(btnsave);
-    let output = document.createElement('textarea');
-    dbgroot.appendChild(output);
     let body = document.body;
     body.appendChild(dbgroot);
     body.addEventListener('click', function(){mapview.value = ns.render()});
