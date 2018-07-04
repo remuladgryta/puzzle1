@@ -109,32 +109,32 @@ function $(args){
     if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('up') &&
         ns.dirmap[ns.tileAt(ns.x, ns.y-1)].includes('down')){
       ns.y -= 1;
+      ns.handleSpecialTile();
     }
-    ns.handleSpecialTile();
   }
   ns.moveRight = function(){
     if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('right') &&
         ns.dirmap[ns.tileAt(ns.x+1, ns.y)].includes('left'))
     {
       ns.x += 1;
+      ns.handleSpecialTile();
     }
-    ns.handleSpecialTile();
   }
   ns.moveDown = function(){
     if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('down') &&
         ns.dirmap[ns.tileAt(ns.x, ns.y+1)].includes('up'))
     {
       ns.y += 1;
+      ns.handleSpecialTile();
     }
-    ns.handleSpecialTile();
   }
   ns.moveLeft = function(){
     if (ns.dirmap[ns.tileAt(ns.x, ns.y)].includes('left') &&
         ns.dirmap[ns.tileAt(ns.x-1, ns.y)].includes('right'))
     {
       ns.x -= 1;
+      ns.handleSpecialTile();
     }
-    ns.handleSpecialTile();
   }
   ns.parseArgs();
   if (ns.debug){
