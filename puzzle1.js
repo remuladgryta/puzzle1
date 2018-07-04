@@ -34,6 +34,7 @@ function $(args){
     '┌': 'J',
     'Q': 'Q',
     'K': 'K',
+    '@': 'A'
   };
   ns.dirmap = {
     '─': ['right', 'left'],
@@ -54,6 +55,7 @@ function $(args){
     'X': ['up', 'right', 'down', 'left'],
     'Q': ['up', 'right', 'down', 'left'],
     'K': ['up', 'right', 'down', 'left'],
+    '@': ['up', 'right', 'down', 'left'],
     '█': []
   }
   ns.portals = {'3,3':'8,1'};
@@ -103,6 +105,9 @@ function $(args){
       target = target.split(',');
       ns.x = Number.parseInt(target[0]);
       ns.y = Number.parseInt(target[1]);
+      if (target[2]){
+        alert(target[2]);//Optional pop-up message
+      }
     }
   }
   ns.moveUp = function(){
@@ -201,7 +206,7 @@ function $(args){
         ns.key = ns.parsedict(symboledit.value);
         ns.portals = ns.parsedict(portaledit.value);
         let gen = new URL(location);
-        //ns.debug = false;
+        ns.debug = false;
         gen.search = '?data=' + ns.dumpArgs();
         ns.debug = true;
         output.value = gen.href;
