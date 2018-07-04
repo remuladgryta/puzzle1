@@ -14,12 +14,11 @@ function $(args){
   }
   ns.dumpArgs = function(){
     let ret = {}
-    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y', 'startx', 'starty']){
+    for (let i of ['key', 'mapwidth', 'map', 'debug', 'x', 'y', 'startx', 'starty', 'portals']){
       ret[i] = ns[i];
     }
     return btoa(encodeURIComponent(JSON.stringify(ret)));
   }
-  //up, right, down, left
   ns.key = {
     '┼': 'A',
     '─': '2',
@@ -56,6 +55,7 @@ function $(args){
     'K': ['up', 'right', 'down', 'left'],
     '█': []
   }
+  ns.portals = {'3,3':'8,1'};
   ns.mapwidth = 11;
   ns.map = '███████████'+
            '█┌┬─┬┬┬┬┬┐█'+
@@ -94,6 +94,14 @@ function $(args){
     if (ns.tileAt(ns.x, ns.y) === 'X'){//Dead end should return you to the start
       ns.x = ns.startx;
       ns.y = ns.starty;
+    }
+    //Handle portal tiles
+    let source = ns.x + "," + ns.y;
+    let target = ns.portals[source];
+    if (target){
+      target = target.split(',');
+      ns.x = Number.parseInt(target[0]);
+      ns.y = Number.parseInt(target[1]);
     }
   }
   ns.moveUp = function(){
@@ -160,28 +168,36 @@ function $(args){
     dbgroot.appendChild(mapedit);
     let symboledit = document.createElement('textarea');
     symboledit.title = 'Edit this to change what symbol is seen through the lens depending on where you are.'
-    ns.printkeys = function(){
+    ns.printdict = function(dict){
       let out = "";
-      for (let k in ns.key){
-        out += k + ':' + ns.key[k] + '\n';
+      for (let k in dict){
+        out += k + ':' + dict[k] + '\n';
       }
       return out.trim();
     }
-    ns.parsekeys = function(inputtext){
+    ns.parsedict = function(inputtext){
+      let ret = {}
       let lines = inputtext.split('\n');
       for (let line of lines){
         let tokens = line.split(':');
-        ns.key[tokens[0]] = tokens[1].trim();
+        ret[tokens[0]] = tokens[1].trim();
       }
+      return ret;
     }
-    symboledit.value = ns.printkeys();
+    symboledit.value = ns.printdict(ns.key);
     symboledit.rows = symboledit.value.split('\n').length;
     dbgroot.appendChild(symboledit);
+    let portaledit = document.createElement('textarea');
+    portaledit.title = 'Edit this to add tiles that teleport you to other tiles. Format is "x,y:x,y" ("1,2:10,11" teleports from x=1,y=2 to x=10,y=11).';
+    portaledit.value = ns.printdict(ns.portals);
+    portaledit.rows = portaledit.value.split('\n').length;
+    dbgroot.appendChild(portaledit);
     let btnsave = document.createElement('button');
     btnsave.innerHTML = 'Generate URL';
     btnsave.addEventListener('click', function(){
       ns.parseMap(mapedit.value);
-      ns.parsekeys(symboledit.value);
+      ns.key = ns.parsedict(symboledit.value);
+      ns.portals = ns.parsedict(portaledit.value);
       let gen = new URL(location);
       ns.debug = false;
       gen.search = '?data=' + ns.dumpArgs();
